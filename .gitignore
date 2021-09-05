@@ -1,0 +1,4 @@
+.vscode/
+*.svg
+build/
+graph/
