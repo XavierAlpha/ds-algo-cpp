@@ -856,6 +856,186 @@ inline int Avl_tree<Tv>::deletion(Tv val)
 
 //--------------------------------------AVL End-------------------------------------------
 
+//--------------------------------------BR Tree-------------------------------------------
+//DFS
+template<typename Tv>
+inline int Black_Red_tree<Tv>::pre_order(BR_node<Tv>*& root)
+{
+    if (!root)
+        return -1;
+    mp[root->key] = root->color;
+    pre_order(root->left);
+    pre_order(root->right);
+    return 0;
+}
+
+template<typename Tv>
+inline int Black_Red_tree<Tv>::in_order(BR_node<Tv>*& root)
+{
+    if (!root)
+        return -1;
+    in_order(root->left);
+    mp[root->key] = root->color;
+    in_order(root->right);
+    return 0;
+}
+
+template<typename Tv>
+inline int Black_Red_tree<Tv>::post_order(BR_node<Tv>*& root)
+{
+    if (!root)
+        return -1;
+    post_order(root->left);
+    post_order(root->right);
+    mp[root->key] = root->color;
+    return 0;
+}
+
+//BFS
+template<typename Tv>
+inline int Black_Red_tree<Tv>::layer_order(BR_node<Tv>*& root)
+{
+    std::queue<Tree_node<Tv>*> q;
+    q.push(root);
+    while(!q.empty())
+    {
+        auto node = q.front();
+        q.pop();
+        mp[root->key] = root->color;
+        if (node->left)
+            q.push(node->left);
+        if (node->right)
+            q.push(node->right);
+    }
+    return 0;
+}
+
+template<typename Tv>
+inline int Black_Red_tree<Tv>::left_rotate(BR_node<Tv>* root)
+{
+    auto pivot = root->right;
+    root->right = pivot->left;
+    pivot->left = root;
+    auto p = root->parent;
+    root->parent = pivot;
+    if (!p) {
+        this->root = pivot;
+        pivot->parent = nullptr;
+        return 0;
+    }
+    if (p->left == root)
+        p->left = pivot;
+    else // p->right == root
+        p->right = pivot;
+    pivot->parent = p;
+    return 0;
+}
+
+template<typename Tv>
+inline int Black_Red_tree<Tv>::right_rotate(BR_node<Tv>* root)
+{
+    auto pivot = root->left;
+    root->left = pivot->right;
+    pivot->right = root;
+    auto p = root->parent;
+    root->parent = pivot;
+    if (!p) {
+        this->root = pivot;
+        pivot->parent = nullptr;
+        return 0;
+    }
+    if (p->left == root)
+        p->left = pivot;
+    else // p->left == root
+        p->left = pivot;
+    pivot->parent = p;
+    return 0;
+}
+
+template<typename Tv>
+inline int Black_Red_tree<Tv>::_rb_fixup(BR_node<Tv>* node)
+{
+    while (node->parent && node->parent->color == RED)
+    {
+        // consider root never be RED, so _ppar must exists and its color is BLACK
+        auto _par = node->parent;
+        auto _ppar = _par->parent;
+        if (_par == _ppar->left)
+        {
+            if (_ppar->right && _ppar->right->color == RED) // case 1
+            {
+                _ppar->left->color = BLACK;
+                _ppar->right->color = BLACK;
+                _ppar->color = RED;
+                node = _ppar; // for next loop
+            }
+            else // _ppar->right->color == BLCAK and won't loop // case 2
+            {
+                if (node == _par->right) { // has inflection point. need twice rotation
+                    left_rotate(_par);
+                    _par = node;
+                }
+                right_rotate(_ppar);
+                _par->color = BLACK;
+                _ppar->color = RED;
+            }
+        }
+        else // _par == _ppar->right
+        {
+            if (_ppar->left && _ppar->left->color == RED) {
+                _ppar->left->color = BLACK;
+                _ppar->right->color = BLACK;
+                _ppar->color = RED;
+                node = _ppar;
+            }
+            else 
+            { 
+                if (node == _par->left) {
+                right_rotate(_par);
+                _par = node;
+                }
+                left_rotate(_ppar);
+                _par->color = BLACK;
+                _ppar->color = RED;
+            }
+        }
+    }
+    this->root->color = BLACK;
+    return 0;
+}
+
+template<typename Tv>
+inline int Black_Red_tree<Tv>::insertion(BR_node<Tv>* node)
+{
+    auto rt = this->root;
+    decltype(rt) p = nullptr;
+    while (rt)
+    {
+        p = rt;
+        if (node->key < rt->key)
+            rt = rt->left;
+        else
+            rt = rt->right;
+    }
+    node->parent = p;
+    if (!p)
+        this->root = node; // when no node in tree
+    else if (node->key < p->key)
+        p->left = node;
+    else
+        p->right = node;
+    node->color = RED;
+
+    _rb_fixup(node);
+    return 0;
+}
+
+template<typename Tv>
+inline int Black_Red_tree<Tv>::deletion(Tv val)
+{
+
+}
+
 int main(int argc, char const *argv[])
 {
 //---------------Binary Tree-----------------
@@ -979,6 +1159,36 @@ int main(int argc, char const *argv[])
     printf("\n");
 
 //---------------Black Red Tree-----------------
+    auto br_tree = Black_Red_tree<double>();
+    auto br_nd_3 = new BR_node(3.0);
+    auto br_nd_2 = new BR_node(2.0);
+    auto br_nd_4 = new BR_node(4.0);
+    auto br_nd_1 = new BR_node(1.0);
+    auto br_nd_1_5 = new BR_node(1.5);
+    auto br_nd_0_5 = new BR_node(0.5);
+    br_tree.insertion(br_nd_3);
+    br_tree.insertion(br_nd_2);
+    br_tree.insertion(br_nd_4);
+    br_tree.insertion(br_nd_1);
+    br_tree.insertion(br_nd_1_5);
+
+    br_tree.in_order(br_tree.root);
+    /* 
+                 3B
+               /    \
+              1.5B   4B
+             /  \
+            1R  2R
+    */
+    auto& br_mp_1 = br_tree.get_map();
+    for (auto nd : br_mp_1) {
+        if (nd.second == RED)
+            printf("%.1f:RED ", nd.first);
+        else
+            printf("%.1f:BLACK ", nd.first);
+    }
+    printf("\n");
+
     printf("-----------------------------END-----------------------------\n");
     return 0;
 }

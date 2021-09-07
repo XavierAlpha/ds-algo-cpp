@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <stack>
 #include <string>
+#include <map>
 
 template<typename Tv>
 class Tree_node
@@ -20,7 +21,7 @@ public:
 };
 
 template<typename Tv>
-class Binary_tree : public Tree_node<Tv>
+class Binary_tree
 {
 private:
     struct property
@@ -139,14 +140,14 @@ public:
     Avl_node<Tv>* left;
     Avl_node<Tv>* right;
 
-    Avl_node() : Tree_node<Tv>(), val{0}, hg{0}, bf{0}, left{nullptr}, right{nullptr}  { }
-    Avl_node(Tv _val) : Tree_node<Tv>(_val), val{_val}, hg{0}, bf{0}, left{nullptr}, right{nullptr}  { }
-    Avl_node(int _hg, int _bf, Tv _val) : val{_val}, hg{_hg}, bf{_bf}, left{nullptr}, right{nullptr}, Tree_node<Tv>(_val) { }
-    Avl_node(int _hg, int _bf, Tv _val, Avl_node<Tv>* l, Avl_node<Tv>* r) : val{_val}, hg{_hg}, bf{_bf},left{l}, right{r}, Tree_node<Tv>(_val, static_cast<Tree_node<Tv>*>(l), static_cast<Tree_node<Tv>*>(r)) { }
+    Avl_node() :  val{0}, hg{0}, bf{0}, left{nullptr}, right{nullptr}  { }
+    Avl_node(Tv _val) : val{_val}, hg{0}, bf{0}, left{nullptr}, right{nullptr}  { }
+    Avl_node(int _hg, int _bf, Tv _val) : val{_val}, hg{_hg}, bf{_bf}, left{nullptr}, right{nullptr} { }
+    Avl_node(int _hg, int _bf, Tv _val, Avl_node<Tv>* l, Avl_node<Tv>* r) : val{_val}, hg{_hg}, bf{_bf},left{l}, right{r} { }
 };
 
 template<typename Tv>
-class Avl_tree : public Avl_node<Tv>
+class Avl_tree
 {
 private:
     int init_height();
@@ -211,38 +212,54 @@ public:
 };
 
 // -------------------------Black Red---------------------------------------
+constexpr bool BLACK = true;
+constexpr bool RED = false;
 template<typename Tv>
 class BR_node
 {
-private:
-
 public:
     Tv key;
-    std::string color;
+    bool color;
     BR_node<Tv>* left;
     BR_node<Tv>* right;
     BR_node<Tv>* parent;
 
-    BR_node() : key{0}, color{""}, left{nullptr}, right{nullptr}, parent{nullptr} { }
-    BR_node(Tv _key, std::string _color) : key{_key}, color{_color}, left{nullptr}, right{nullptr}, parent{nullptr} { }
-    BR_node(Tv _key, std::string _color, BR_node<Tv>* _l, BR_node<Tv>* _r, BR_node<Tv>* _p) : key{_key}, color{_color}, left{_l}, right{_r}, parent{_p} { }
+    BR_node(Tv _key) : key{_key}, color{RED}, left{nullptr}, right{nullptr}, parent{nullptr} { }
+    BR_node(Tv _key, bool _color) : key{_key}, color{_color}, left{nullptr}, right{nullptr}, parent{nullptr} { }
+    BR_node(Tv _key, bool _color, BR_node<Tv>* _l, BR_node<Tv>* _r, BR_node<Tv>* _p) : key{_key}, color{_color}, left{_l}, right{_r}, parent{_p} { }
 };
 
 template<typename Tv>
-class Black_Red_tree : public BR_node<Tv>
+class Black_Red_tree
 {
+private:
+    std::map<Tv, bool> mp;
+    int _rb_fixup(BR_node<Tv>*);
 public:
     BR_node<Tv>* root;
 
-    Black_Red_tree() = delete;
-    Black_Red_tree(Tv _key, std::string _color) { root = new Black_Red_tree<Tv>(_key, _color); }
-    Black_Red_tree(Tv _key, std::string _color, BR_node<Tv>* _l, BR_node<Tv>* _r, BR_node<Tv>* _p) { root = new Black_Red_tree<Tv>(_key, _color, _l, _r, _p); }
+    Black_Red_tree() : root{nullptr} { }
+    Black_Red_tree(Tv _key, BR_node<Tv>* _l, BR_node<Tv>* _r, BR_node<Tv>* _p) { root = new BR_node<Tv>(_key, BLACK, _l, _r, _p); }
+
+    // vec
+    std::map<Tv, bool>& get_map() { return mp; }
 
     std::size_t bh();
+
+    // traverse
+    int pre_order(BR_node<Tv>*&);
+    int in_order(BR_node<Tv>*&);
+    int post_order(BR_node<Tv>*&);
+    int layer_order(BR_node<Tv>*&);
+
+    // rotation
+    int left_rotate(BR_node<Tv>*);
+    int right_rotate(BR_node<Tv>*);
+    
     int insertion(BR_node<Tv>* node);
     int deletion(Tv val);
 
-    virtual ~Black_Red_tree() {
+    virtual ~Black_Red_tree() noexcept {
         delete root;
     }
 };
