@@ -234,7 +234,8 @@ class Black_Red_tree
 {
 private:
     std::map<Tv, bool> mp;
-    int _rb_fixup(BR_node<Tv>*);
+    int _rb_fixup_i(BR_node<Tv>*);
+    int _rb_fixup_d(BR_node<Tv>*);
 public:
     BR_node<Tv>* root;
 
@@ -255,9 +256,17 @@ public:
     // rotation
     int left_rotate(BR_node<Tv>*);
     int right_rotate(BR_node<Tv>*);
-    
+
     int insertion(BR_node<Tv>* node);
-    int deletion(Tv val);
+
+    BR_node<Tv>* minimum(BR_node<Tv>* node);
+    BR_node<Tv>* successor(BR_node<Tv>* node);
+    BR_node<Tv>* maximum(BR_node<Tv>* node);
+    BR_node<Tv>* predecessor(BR_node<Tv>* node);
+
+    BR_node<Tv>* search(Tv key);
+    BR_node<Tv>* replace(BR_node<Tv>* u, BR_node<Tv>* v);
+    int deletion(Tv key);
 
     virtual ~Black_Red_tree() noexcept {
         delete root;

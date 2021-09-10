@@ -857,6 +857,27 @@ inline int Avl_tree<Tv>::deletion(Tv val)
 //--------------------------------------AVL End-------------------------------------------
 
 //--------------------------------------BR Tree-------------------------------------------
+
+template<typename Tv>
+inline BR_node<Tv>* Black_Red_tree<Tv>::search(Tv key)
+{
+    auto root = this->root;
+    while (root)
+    {
+        if (root->key == key)
+            return root;
+        if (key < root->key) {
+            root = root->left;
+            continue;
+        }
+        if (key > root->key) {
+            root = root->right;
+            continue;
+        }
+    }
+    return nullptr;
+}
+
 //DFS
 template<typename Tv>
 inline int Black_Red_tree<Tv>::pre_order(BR_node<Tv>*& root)
@@ -953,7 +974,7 @@ inline int Black_Red_tree<Tv>::right_rotate(BR_node<Tv>* root)
 }
 
 template<typename Tv>
-inline int Black_Red_tree<Tv>::_rb_fixup(BR_node<Tv>* node)
+inline int Black_Red_tree<Tv>::_rb_fixup_i(BR_node<Tv>* node)
 {
     while (node->parent && node->parent->color == RED)
     {
@@ -1026,14 +1047,326 @@ inline int Black_Red_tree<Tv>::insertion(BR_node<Tv>* node)
         p->right = node;
     node->color = RED;
 
-    _rb_fixup(node);
+    _rb_fixup_i(node);
     return 0;
 }
 
+//SUCCESSOR Minimum
 template<typename Tv>
-inline int Black_Red_tree<Tv>::deletion(Tv val)
+inline BR_node<Tv>* Black_Red_tree<Tv>::minimum(BR_node<Tv>* node)
 {
+    // case 0 : node = nullptr
+    if (!node)
+        return nullptr;
+    // case 1 : node->left == nullptr
+    if (!node->left)
+        return node;
+    // case 2 : else go to node->left till nullptr
+    while (node->left) {
+        node = node->left;
+    }
+    return node;
+}
 
+template<typename Tv>
+inline BR_node<Tv>* Black_Red_tree<Tv>::successor(BR_node<Tv>* node)
+{
+    // case 1 : node == nullptr
+    if (!node)
+        return nullptr;
+    // case 2 : node->right != nullptr
+    if (node->right)
+        return minimum(node->right);
+    auto parnt = node->parent;
+    if (!parnt)
+        return nullptr;
+    // case 3: node->right == null and node->parent->left == node
+    if (parnt->left == node)
+        return parnt;
+    // case 4 : node->right == null and node->parent->right == node
+    //if (parnt->right == node)
+    //    return nullptr;
+    return nullptr;
+}
+
+template<typename Tv>
+inline BR_node<Tv>* Black_Red_tree<Tv>::maximum(BR_node<Tv>* node)
+{
+    // case 1 : node == nullptr
+    if (!node)
+        return nullptr;
+    // case 2 : node->right == nullptr
+    if (!node->right)
+        return node;
+    // case 3 : node->right != nullptr
+    while (node->right) {
+        node = node->right;
+    }
+    return node;
+}
+
+template<typename Tv>
+inline BR_node<Tv>* Black_Red_tree<Tv>::predecessor(BR_node<Tv>* node)
+{
+    if (!node)
+        return nullptr;
+    // case 1: node->left != null
+    if (node->left)
+        return maximum(node->left);
+    auto parnt = node->parent;
+    if (!parnt)
+        return nullptr;
+    //  case 2: node->left == null and node->parent->right == node
+    if (parnt->right == node)
+        return parnt;
+    //  case 3: node->left == null and node->parent->left == node
+    //if (parnt->left == node)
+    //    return nullptr;
+    return nullptr;
+}
+
+template<typename Tv>
+inline int Black_Red_tree<Tv>::_rb_fixup_d(BR_node<Tv>* node)
+{
+    // node from bottom to top, if node=RED, just GO TO "node->color=BLACK" so that node's two black becomes one, and the other black is set here.
+    while (node != this->root && node->color == BLACK) 
+    {
+        if (node = node->parent->left)
+        {
+            auto sibling = node->parent->right;
+            // case 1 sibling is RED, transform to case 2--both of node and sibling are black
+            /*                            
+                    parent(B|R)                 
+                    /    \
+                   /      \
+                 node(2B)  sibling(R)
+                          /   \
+                         /     \
+                        (B)    (B)
+            */
+            if (sibling && sibling->color == RED) 
+            {
+                // rotate to let sibling be BLACK
+                node->parent->color = RED;
+                sibling->color = BLACK;
+                left_rotate(node->parent);
+                sibling = nd->parent->right; // sibling will change, update it
+                /*   After rotation : transform to next case:2
+                        sibling(B)
+                        /     \
+                       /       \
+                      /         \
+                  parent(B|R)   (B)
+                    /    \
+                   /      \
+                 node(2B)  (B)[new sibling]
+                          /  \
+                         /    \
+                      (B|R)  (B|R)
+                */
+            }
+
+            // case 2: sibling's left and right are both black
+            /*
+                          ...
+                        /     \
+                       /       \
+                      /         \
+                  parent(B|R)   ...
+                    /    \
+                   /      \
+               node(2B) sibling(B)
+                          /  \
+                         /    \
+                        (B)  (B)
+            */
+            if ((!sibling->left && !sibling->right) || (!sibling->left && sibling->right->color == BLACK) || (!sibling->right && sibling->left->color == BLACK) || (sibling->left->color == BLACK && sibling->right->color == BLACK)) {
+                // notice, if left or right is nullptr, it's treated as BLACK, meaning no influence to it's parent when changing color
+                sibling->color = RED; // node=2BLACK => 1BLACK, sibling=BLACK => RED
+                node = node->parent;
+               /* NEXT LOOP IN WHILE:now parent is new node, if PARENT is RED, no need to step into WHILE and it will be changed to BLACK. if PARENT is BLACK+BLACK,then step into WHILE loop
+                     new parent(B|R)
+                        /     \
+                       /       \
+                      /         \
+              new node(2B)   new sibling(B|R) // NEXT LOOP
+                    /    \
+                   /      \
+            old node(1B) old sibling(R)
+                          /  \
+                         /    \
+                        (B)  (B)
+               */
+            }
+
+            // case 3,4: sibling's children are not all BLACK
+            else 
+            {
+                /* case 3: left->color==RED, transform to case 4: right is RED
+                         ...
+                        /  \
+                       /    \
+                      /      \
+                   par(B|R)  ...
+                    /    \
+                   /      \
+                 node(2B)  sibling(B)
+                          /   \
+                         /     \
+                        (R)    (B)
+                        / \
+                       /   \
+                      (B)  (B)
+                */
+                if (sibling->left && sibling->left->color == RED) 
+                {
+                    sibling->color = RED;
+                    sibling->left->color = BLACK;
+                    right_rotate(sibling);
+                    sibling = nd->parnet->right; // sibling will change
+                }
+
+                /* case 4: sibling->right==RED (Also after case 3's rotation)   
+                         ...
+                        /  \
+                       /    \
+                      /      \
+             B <= par(B|R)  ...
+                    /    \
+                   /      \
+        node(2B) => 1B  sibling(B) [=>R] => par(B|R)
+                          /   \
+                         /     \
+                        (B)    (R) => B
+                               / \
+                              /   \
+                             (B)  (B)
+                */
+                sibling->color = node->parent->color;
+                node->parent->color = BLACK;
+                sibling->right->color = BLACK;
+                left_rotate(node->parent);
+                /*  After rotation
+                                ...
+                              /     \
+                             /       \
+                            /         \
+                   sibling(par(B|R))  ...
+                          /     \
+                         /       \
+                      par(B)     (B)
+                       /  \      / \
+                      /    \    /   \
+                  node(1B) (B) (B)  (B)
+                */
+               break;
+            }
+        }
+
+        else // node = node->parent->right, a mirror condition
+
+        {
+            auto sibling = node->parent->left;
+            if (sibling && sibling->color == RED) {
+                node->parent->color = RED;
+                sibling->color = BLACK;
+                left_rotate(node->parent);
+                sibling = nd->parent->left;
+            }
+            if ((!sibling->left && !sibling->right) || (!sibling->right && sibling->left->color == BLACK) || (!sibling->left && sibling->right->color == BLACK) || (sibling->left->color == BLACK && sibling->right->color == BLACK)) {
+                sibling->color = RED;
+                node = node->parent;
+            }
+            else 
+            {
+                if (sibling->left && sibling->left->color == RED) 
+                {
+                    sibling->color = RED;
+                    sibling->right->color = BLACK;
+                    left_rotate(sibling);
+                    sibling = nd->parnet->left;
+                }
+                sibling->color = node->parent->color;
+                node->parent->color = BLACK;
+                sibling->left->color = BLACK;
+                right_rotate(node->parent);
+                break;
+            }
+        }
+    }
+    
+    /*  if red, just change to black
+             parent(B|R)
+             /    \
+            /      \
+ (B) <= node(R)  sibling(R|B)
+                   /   \
+                  /     \
+                 (B|R)    (B|R)
+    */
+    node->color = BLACK;
+}
+
+template<typename Tv>
+inline BR_node<Tv>* replace(BR_node<Tv>* u, BR_node<Tv>* v)
+{
+    // v replace u, only fix parent
+    auto p = u->parent;
+    if (!p) // u==root
+        this->root = v;
+    else if (p->left == u)
+        p->left = v;
+    else
+        p->right = v;
+    v->parent = p;
+    return u;
+}
+
+template<typename Tv>
+inline int Black_Red_tree<Tv>::deletion(Tv key)
+{
+    // no matter what case is, the way to delete is to find the key's successor, and using it to replace key's position
+    // if key's color == red, just delete;
+    // if key's color == black, the repalce one change its color to key's color in order to keep BLACK not changed if need
+    
+    // NOW, successor replace the key's position, and its color is same as key's color
+
+    // as below, "repalced_pos" represents successor's original position, but the position's node is changed, now we are in _rb_fixup_d
+    // if original color is red, just change it to black to keep numbers of black not changed
+    // if black, we need to process from "replaced_pos" bottom to top
+    auto nd = search(key);
+    if (!nd)
+        return -1;
+    auto origin_color = nd->color;
+    decltype(nd) replaced_pos = nullptr;
+    if (!nd->left) {
+        replaced_pos = nd->right;
+        delete replace(nd, nd->right);
+    }
+    else if (!nd->right) {
+        replaced_pos = nd->left;
+        delete replace(nd, nd->left);
+    }
+    else {
+        auto suc = successor(node->right);
+        origin_color = suc->color;
+        suc->color = node->color;
+        replaced_pos = suc->right;
+        if (nd->right != suc) {
+            replace(suc, suc->right);
+            suc->right = nd->right;
+            suc->right->parent = suc;
+        }
+        suc->left = nd->left;
+        suc->left->parent = suc;
+        delete replace(nd, suc);
+    }
+    // fixup color
+    // from bottom to top
+    if (origin_color == BLACK)
+    {
+        _rb_fixup_d(replaced_pos);
+    }
 }
 
 int main(int argc, char const *argv[])
