@@ -1180,7 +1180,8 @@ inline int Black_Red_tree<Tv>::_rb_fixup_d(BR_node<Tv>* node)
                          /    \
                         (B)  (B)
             */
-            if ((!sibling->left && !sibling->right) || (!sibling->left && sibling->right->color == BLACK) || (!sibling->right && sibling->left->color == BLACK) || (sibling->left->color == BLACK && sibling->right->color == BLACK)) {
+            if ((!sibling->left && !sibling->right) || (!sibling->left && sibling->right->color == BLACK) || (!sibling->right && sibling->left->color == BLACK) || (sibling->left->color == BLACK && sibling->right->color == BLACK))
+            {
                 // notice, if left or right is nullptr, it's treated as BLACK, meaning no influence to it's parent when changing color
                 sibling->color = RED; // node=2BLACK => 1BLACK, sibling=BLACK => RED
                 node = node->parent;
@@ -1267,13 +1268,15 @@ inline int Black_Red_tree<Tv>::_rb_fixup_d(BR_node<Tv>* node)
 
         {
             auto sibling = node->parent->left;
-            if (sibling && sibling->color == RED) {
+            if (sibling && sibling->color == RED)
+            {
                 node->parent->color = RED;
                 sibling->color = BLACK;
                 left_rotate(node->parent);
                 sibling = nd->parent->left;
             }
-            if ((!sibling->left && !sibling->right) || (!sibling->right && sibling->left->color == BLACK) || (!sibling->left && sibling->right->color == BLACK) || (sibling->left->color == BLACK && sibling->right->color == BLACK)) {
+            if ((!sibling->left && !sibling->right) || (!sibling->right && sibling->left->color == BLACK) || (!sibling->left && sibling->right->color == BLACK) || (sibling->left->color == BLACK && sibling->right->color == BLACK))
+            {
                 sibling->color = RED;
                 node = node->parent;
             }
@@ -1305,6 +1308,7 @@ inline int Black_Red_tree<Tv>::_rb_fixup_d(BR_node<Tv>* node)
                  (B|R)    (B|R)
     */
     node->color = BLACK;
+    return 0;
 }
 
 template<typename Tv>
@@ -1361,12 +1365,12 @@ inline int Black_Red_tree<Tv>::deletion(Tv key)
         suc->left->parent = suc;
         delete replace(nd, suc);
     }
-    // fixup color
-    // from bottom to top
+    // fixup color from bottom to top
     if (origin_color == BLACK)
     {
-        _rb_fixup_d(replaced_pos);
+        return _rb_fixup_d(replaced_pos);
     }
+    return 0;
 }
 
 int main(int argc, char const *argv[])
